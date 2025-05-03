@@ -1,0 +1,14 @@
+export DATASET_TYPE="MPB"
+
+export DIMENSIONS="5"
+export HYPERSPHERE_LEVELS="2"
+
+export IS_DYNAMIC_ACTIVATED="true"
+
+export SEVERITY_PREDICTION="true"
+export FREQUENCY_PREDICTION="true"
+
+# 1 * pow(10, -3)
+export GAMMA_MIN="0.001"
+export GAMMA_DECREASE_STEP="0.01"
+export STEP_SIZE="0.01"
