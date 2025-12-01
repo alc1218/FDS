@@ -6,12 +6,13 @@ import sys
 # Overall parameters
 is_dynamic_activated = bool(os.environ.get('IS_DYNAMIC_ACTIVATED', 'true').lower() == "true")
 # random_seeds = list(range(10))
-# random_seeds = [0]
+random_seeds = [0]
 # random_seeds = [31]
 # random_seeds = [42, 43, 44, 45, 46, 47, 48, 49, 50, 51]
 # random_seeds = list(range(100))  # 0.75
-random_seeds = list(range(10))
+# random_seeds = list(range(10))
 
+intensification_in_parallel = int(os.environ.get('INTENSIFICATION_IN_PARALLEL', 1))
 
 log_level = "INFO"  # "NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
 
@@ -45,7 +46,7 @@ datasets = {
         "period": int(os.environ.get('PERIOD', 5000)),  # 500, 1000, 2500, 5000, 10000
         "npeaks": int(os.environ.get('NPEAKS', 10)),  # 1, 5, 10, 20, 30, 40, 50, 100, 200
         "make_problem_as_minimization": -1,
-        "max_evaluations": 5e5  # 5e3  # 5e4 # 5e5,
+        "max_evaluations": 5e4  # 5e3  # 5e4 # 5e5,
     }
 }
 
