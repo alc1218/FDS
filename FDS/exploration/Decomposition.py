@@ -391,6 +391,7 @@ class Decomposition(utils_decomposition.UtilsDecomposition):
 
     def select_next_node_to_be_explored(self):
 
+        selected_hyperspheres_to_be_intensified = []
         is_landscape_changed = False
         are_max_evaluations_reached = False
 
@@ -529,7 +530,7 @@ class Decomposition(utils_decomposition.UtilsDecomposition):
                             fitness, is_landscape_changed, are_max_evaluations_reached = self.dataset.evaluate_fitness(sample.center, sample.id, "H")
                             
                             if is_landscape_changed or are_max_evaluations_reached:
-                                return is_landscape_changed, are_max_evaluations_reached
+                                return is_landscape_changed, are_max_evaluations_reached, selected_hyperspheres_to_be_intensified
                             
                             performances.append(fitness)
 
@@ -557,5 +558,7 @@ class Decomposition(utils_decomposition.UtilsDecomposition):
             elif not coordinates_solutions and coordinates_population:
                 self.current_hypersphere = population[0]
         
-        return is_landscape_changed, are_max_evaluations_reached
+        selected_hyperspheres_to_be_intensified = population[: constants.intensification_in_parallel]
+        
+        return is_landscape_changed, are_max_evaluations_reached, selected_hyperspheres_to_be_intensified
         

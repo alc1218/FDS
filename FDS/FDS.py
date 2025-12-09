@@ -77,7 +77,7 @@ class FDS(Intensification.Intensification, Decomposition.Decomposition):
             LOGGER.info(f"Decompose {constants.k_levels_max} level/s took: {end - st} seconds")
 
             self.current_hypersphere = self.initial_hypersphere
-            is_landscape_changed, are_max_evaluations_reached = self.main_intensification()
+            is_landscape_changed, are_max_evaluations_reached, current_hypersphere = self.main_intensification()
 
         self.dataset.hyperspheres_centers = self.gather_hyperspheres(level=-1)
 
@@ -199,7 +199,7 @@ class FDS(Intensification.Intensification, Decomposition.Decomposition):
 
             self.current_hypersphere = hypersphere_instance
             self.current_hypersphere.center = self.current_hypersphere.fitness_coordinates
-            is_landscape_changed, are_max_evaluations_reached = self.main_intensification()
+            is_landscape_changed, are_max_evaluations_reached, current_hypersphere = self.main_intensification()
 
             if not self.current_hypersphere.is_local_minimum:
                 trackers_that_did_not_locate_back_the_optima.append(self.current_hypersphere)
@@ -243,7 +243,7 @@ class FDS(Intensification.Intensification, Decomposition.Decomposition):
             # Search root hypersphere
             self.current_hypersphere = self.initial_hypersphere
             if not self.searched_solutions_in_previous_landscapes:
-                is_landscape_changed, are_max_evaluations_reached = self.main_intensification()
+                is_landscape_changed, are_max_evaluations_reached, current_hypersphere = self.main_intensification()
         elif constants.decompose_tree in ["stepwise"]:
             # Search root hypersphere
             self.current_hypersphere = self.initial_hypersphere

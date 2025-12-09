@@ -8,6 +8,8 @@ import pickle
 import logging
 import time
 from datetime import timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 import FDS.FDS as FDS
 import FDS.Detector as Detector
@@ -38,7 +40,7 @@ def main(random_seed, output_folder, verbose=True):
 
         LOGGER.debug(f"select_next_node_to_be_explored")
         st = time.time()
-        is_landscape_changed, are_max_evaluations_reached = fds.select_next_node_to_be_explored()
+        is_landscape_changed, are_max_evaluations_reached, selected_hyperspheres_to_be_intensified = fds.select_next_node_to_be_explored()
         end = time.time()
         LOGGER.debug(f"Selection node time: {end - st}")
         if are_max_evaluations_reached:
@@ -47,7 +49,68 @@ def main(random_seed, output_folder, verbose=True):
         if not is_landscape_changed:
             LOGGER.debug(f"main_intensification")
             st = time.time()
-            is_landscape_changed, are_max_evaluations_reached = fds.main_intensification()
+            
+            # Parallelized intensification
+            # Note: A lock is used to protect shared state (fds.dataset.number_of_evaluations, 
+            # fds.trackers, etc.). For true parallelization, consider making the dataset thread-safe
+            # or using ProcessPoolExecutor (requires picklable objects).
+            lock = threading.Lock()
+            
+            def process_hypersphere(hypersphere_to_be_intensified):
+                """Process a single hypersphere intensification"""
+                # Use lock to protect shared state access during intensification
+                with lock:
+                    fds.current_hypersphere = hypersphere_to_be_intensified
+                    is_landscape_changed_result, are_max_evaluations_reached_result, current_hypersphere_result = fds.main_intensification()
+                return (is_landscape_changed_result, are_max_evaluations_reached_result, current_hypersphere_result)
+            
+            # Use ThreadPoolExecutor to parallelize the intensification
+            is_landscape_changed_list = []
+            are_max_evaluations_reached_list = []
+            current_hypersphere_list = []
+            
+            # Determine number of workers (use constant if set, otherwise use number of hyperspheres)
+            max_workers = min(len(selected_hyperspheres_to_be_intensified), 
+                            constants.intensification_in_parallel if constants.intensification_in_parallel > 0 
+                            else len(selected_hyperspheres_to_be_intensified))
+            
+            # If parallelization is disabled (max_workers == 1), run sequentially
+            if max_workers == 1:
+                for hypersphere_to_be_intensified in selected_hyperspheres_to_be_intensified:
+                    fds.current_hypersphere = hypersphere_to_be_intensified
+                    is_landscape_changed_result, are_max_evaluations_reached_result, current_hypersphere_result = fds.main_intensification()
+                    is_landscape_changed_list.append(is_landscape_changed_result)
+                    are_max_evaluations_reached_list.append(are_max_evaluations_reached_result)
+                    current_hypersphere_list.append(current_hypersphere_result)
+            else:
+                # Process hyperspheres in parallel
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    # Submit all tasks
+                    futures = [executor.submit(process_hypersphere, hypersphere) 
+                              for hypersphere in selected_hyperspheres_to_be_intensified]
+                    
+                    # Collect results as they complete
+                    for future in as_completed(futures):
+                        try:
+                            is_landscape_changed_result, are_max_evaluations_reached_result, current_hypersphere_result = future.result()
+                            is_landscape_changed_list.append(is_landscape_changed_result)
+                            are_max_evaluations_reached_list.append(are_max_evaluations_reached_result)
+                            current_hypersphere_list.append(current_hypersphere_result)
+                        except Exception as exc:
+                            LOGGER.error(f"Hypersphere processing generated an exception: {exc}")
+            
+            # Reassign results to maintain order (if needed)
+            # Note: The order might be different due to parallel execution, but that's usually fine
+            # If order matters, we can use a dictionary to map results back
+            
+            if any(is_landscape_changed_list):
+                is_landscape_changed = True
+                dataset.is_landscape_changed = False
+
+            if any(are_max_evaluations_reached_list):
+                are_max_evaluations_reached = True
+
+            # Continue FDS as usual
             end = time.time()
             LOGGER.debug(f"Intensification node time: {end - st}")
             if are_max_evaluations_reached:

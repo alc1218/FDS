@@ -23,6 +23,7 @@ class Dataset:
 
     def __init__(self, random_seed, output_folder):
         self.counter = 0
+        self.is_landscape_changed = False
 
         self.number_of_dimensions = None
         self.upper_bound = None
@@ -209,11 +210,10 @@ class Dataset:
         return solution * (self.upper_bound - self.lower_bound) + self.lower_bound
 
     def check_if_landscape_has_changed(self):
-        is_landscape_changed = False
         # if self.number_of_evaluations > 1000 and self.number_of_evaluations % self.benchmark.period == 0:
         if constants.frequency_prediction and self.number_of_evaluations % self.benchmark.period == 0:
-            is_landscape_changed = True
-        return is_landscape_changed
+            self.is_landscape_changed = True
+        return self.is_landscape_changed
 
     def check_if_max_evaluations_are_reached(self):
         are_max_evaluations_reached = False
